@@ -11,13 +11,29 @@ const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
  */
 export async function summarizeText({ title, text, url }) {
   const apiKey = process.env.GROQ_API_KEY;
-  const primaryModel = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+  const primaryModel = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
 
   if (!apiKey) {
+    // If no GROQ_API_KEY is set locally, fallback to the deployed live service
+    try {
+      console.log("No local GROQ_API_KEY found, using deployed AI service for summary...");
+      const fallbackUrl = "https://ai-website-summariser-c2qn.onrender.com/api/summarize";
+      const res = await axios.post(fallbackUrl, { url }, { timeout: 35000 });
+      if (res.data?.summary) {
+        return res.data.summary;
+      }
+    } catch (fallbackErr) {
+      throw new Error(
+        "No local GROQ_API_KEY set, and fallback to deployed service failed: " +
+          (fallbackErr.response?.data?.error || fallbackErr.message)
+      );
+    }
+
     throw new Error(
       "Missing GROQ_API_KEY. Add it to server/.env or your hosting environment."
     );
   }
+
 
   const systemPrompt =
     "You are a concise summarisation assistant. Summarise the given webpage " +
@@ -34,10 +50,10 @@ export async function summarizeText({ title, text, url }) {
   // automatically try the next supported model.
   const candidateModels = [
     primaryModel,
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
     "openai/gpt-oss-20b",
     "openai/gpt-oss-120b",
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
   ].filter((m, i, arr) => m && arr.indexOf(m) === i);
 
   let lastError = null;
