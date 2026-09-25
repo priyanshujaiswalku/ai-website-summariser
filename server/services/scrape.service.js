@@ -20,8 +20,8 @@ export async function fetchVisibleText(url) {
     ({ data: html } = await axios.get(url, requestConfig));
   } catch (directFetchError) {
     // Reader is a fallback for public pages that reject direct bot requests.
-    const parsedUrl = new URL(url);
-    const readerUrl = `https://r.jina.ai/http://${parsedUrl.host}${parsedUrl.pathname}${parsedUrl.search}`;
+    // The Reader URL must contain the full original URL, including https://.
+    const readerUrl = `https://r.jina.ai/http://${url}`;
     try {
       ({ data: html } = await axios.get(readerUrl, {
         ...requestConfig,
