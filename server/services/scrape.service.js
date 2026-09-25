@@ -7,15 +7,30 @@ import * as cheerio from "cheerio";
  * and returns a reasonably clean block of text for summarisation.
  */
 export async function fetchVisibleText(url) {
-  const { data: html } = await axios.get(url, {
+  let html;
+  const requestConfig = {
     timeout: 10000,
-    maxContentLength: 5 * 1024 * 1024, // 5MB cap
+    maxContentLength: 5 * 1024 * 1024,
     headers: {
-      // Some sites block requests with no user-agent
-      "User-Agent":
-        "Mozilla/5.0 (compatible; AISummariserBot/1.0; +https://example.com)",
+      "User-Agent": "Mozilla/5.0 (compatible; AISummariserBot/1.0)",
     },
-  });
+  };
+
+  try {
+    ({ data: html } = await axios.get(url, requestConfig));
+  } catch (directFetchError) {
+    // Reader is a fallback for public pages that reject direct bot requests.
+    const parsedUrl = new URL(url);
+    const readerUrl = `https://r.jina.ai/http://${parsedUrl.host}${parsedUrl.pathname}${parsedUrl.search}`;
+    try {
+      ({ data: html } = await axios.get(readerUrl, {
+        ...requestConfig,
+        timeout: 20000,
+      }));
+    } catch {
+      throw directFetchError;
+    }
+  }
 
   const $ = cheerio.load(html);
 
