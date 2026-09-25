@@ -11,6 +11,9 @@ export async function fetchVisibleText(url) {
   const requestConfig = {
     timeout: 10000,
     maxContentLength: 5 * 1024 * 1024,
+    // Do not inherit a hosting environment's HTTP(S)_PROXY setting. Those
+    // proxies can return 404 for arbitrary external webpages.
+    proxy: false,
     headers: {
       "User-Agent": "Mozilla/5.0 (compatible; AISummariserBot/1.0)",
     },
