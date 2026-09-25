@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AI Website Summariser — Technical Architecture</title>
+  <style>
+    @page { size: A4; margin: 18mm; }
+    * { box-sizing: border-box; }
+    body { color: #1e293b; font: 10.5pt/1.48 Arial, Helvetica, sans-serif; margin: 0; }
+    h1 { color: #0f172a; font-size: 23pt; letter-spacing: -.4px; margin: 0 0 3px; }
+    h2 { border-bottom: 1px solid #cbd5e1; color: #0f766e; font-size: 14pt; margin: 20px 0 7px; padding-bottom: 3px; }
+    h3 { color: #334155; font-size: 11pt; margin: 11px 0 3px; }
+    p { margin: 5px 0; }
+    ul, ol { margin: 5px 0 8px; padding-left: 20px; }
+    li { margin: 2px 0; }
+    .subtitle { color: #64748b; font-size: 11pt; }
+    .meta { background: #f1f5f9; border-left: 4px solid #14b8a6; margin: 14px 0; padding: 9px 12px; }
+    .flow { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: #0f172a; font-weight: bold; margin: 9px 0; padding: 10px; text-align: center; }
+    code { background: #f1f5f9; border-radius: 3px; color: #0f766e; font-family: Consolas, monospace; font-size: 9.5pt; padding: 1px 3px; }
+    .small { color: #64748b; font-size: 9pt; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>AI Website Summariser</h1>
+  <p class="subtitle">Technical architecture, implementation decisions, and setup guide</p>
+  <div class="meta"><strong>Stack:</strong> React + Vite frontend &middot; Node.js + Express API &middot; Axios + Cheerio extraction &middot; Groq LLM summarisation</div>
+
+  <h2>Overview</h2>
+  <p>This full-stack application accepts a public webpage URL and returns a concise factual summary. It keeps browser-facing UI concerns separate from server-side web fetching and AI-provider communication, so API keys remain private and the provider can be replaced without changing the frontend.</p>
+
+  <h2>Architecture</h2>
+  <div class="flow">React/Vite client &rarr; Express <code>POST /api/summarize</code> &rarr; Axios/Cheerio scraper &rarr; Groq Chat Completions API</div>
+  <ul>
+    <li><strong>Client:</strong> React components provide URL entry, loading feedback, error presentation, and a summary card. A small API module centralises calls to the backend.</li>
+    <li><strong>API:</strong> Express exposes a health route and the summarisation route. CORS permits the Vite development server to access the local API.</li>
+    <li><strong>Scraping service:</strong> Axios downloads public HTML; Cheerio removes non-content elements such as scripts, styles, navigation, and footers, then extracts readable headings, paragraphs, lists, and table cells.</li>
+    <li><strong>AI service:</strong> The cleaned, bounded page text and title are sent to Groq's OpenAI-compatible chat-completions endpoint with a prompt requesting a neutral 4–6 sentence summary.</li>
+  </ul>
+
+  <h2>Key decisions</h2>
+  <h3>Vite and React</h3>
+  <p>Vite provides a fast, minimal local development experience and a straightforward production build. React makes the UI state—idle, loading, successful result, and error—clear and componentised.</p>
+  <h3>Backend proxy instead of browser-side fetching</h3>
+  <p>Public websites often block browser cross-origin requests (CORS), and an AI key must never be sent to the browser. The Express server performs both retrieval and AI calls; the browser only communicates with the application's own API. Development CORS is enabled only to allow the separately hosted Vite client to call that API.</p>
+  <h3>Groq provider integration</h3>
+  <p>The app uses Groq with <code>llama-3.1-8b-instant</code> for a fast free-tier-friendly implementation. This was chosen in place of Gemini for this build. Provider-specific code is contained in <code>server/services/ai.service.js</code>, so Gemini or OpenAI can be adopted later by replacing that service while leaving routes and UI unchanged.</p>
+  <h3>Resilience and safety</h3>
+  <p>The API validates HTTP(S) URLs before fetching, reports insufficient extractable text, handles unreachable pages and timeouts, limits input text before the model call, and reads the Groq key only from server environment variables. <code>.env</code> is excluded from version control.</p>
+
+  <h2>Local setup</h2>
+  <ol>
+    <li>Install Node.js 18 or newer and obtain a Groq API key from <code>console.groq.com/keys</code>.</li>
+    <li>In <code>server</code>, run <code>npm install</code>, copy <code>.env.example</code> to <code>.env</code>, set <code>GROQ_API_KEY</code>, then run <code>npm start</code>.</li>
+    <li>In another terminal, enter <code>client</code>, run <code>npm install</code>, then <code>npm run dev</code>.</li>
+    <li>Open the Vite URL shown in the terminal (normally <code>http://localhost:5173</code>) and submit a public article URL.</li>
+  </ol>
+
+  <h2>Verification</h2>
+  <p>The frontend production build is executed with <code>npm run build</code>. The backend can be checked at <code>GET /api/health</code>; URL validation is exercised through <code>POST /api/summarize</code> with an invalid URL. A live summary additionally requires a valid <code>GROQ_API_KEY</code> and a publicly reachable target page.</p>
+  <p class="small">Prepared for the Indus Net Technologies assignment submission.</p>
+</body>
+</html>
