@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-website-summariser
+    runtime: node
+    buildCommand: cd client && npm ci && npm run build && cd ../server && npm ci
+    startCommand: cd server && npm start
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.1-8b-instant
