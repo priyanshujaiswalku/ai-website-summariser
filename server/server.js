@@ -16,8 +16,14 @@ app.use(express.json());
 app.use(requestLogger);
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({
+    status: "ok",
+    version: "1.1.0",
+    groqConfigured: Boolean(process.env.GROQ_API_KEY),
+    groqModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+  });
 });
+
 
 app.use("/api", summarizeRoute);
 

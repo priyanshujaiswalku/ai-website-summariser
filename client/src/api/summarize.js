@@ -7,11 +7,19 @@ export async function summarizeUrl(url) {
     body: JSON.stringify({ url }),
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(
+      `Server returned ${response.status} (${response.statusText || "Unexpected response"}).`
+    );
+  }
 
   if (!response.ok) {
     throw new Error(data.error || "Failed to summarise this page.");
   }
 
   return data; // { url, title, summary }
+
 }

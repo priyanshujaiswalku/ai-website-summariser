@@ -7,12 +7,18 @@ import * as cheerio from "cheerio";
  * and returns a reasonably clean block of text for summarisation.
  */
 export async function fetchVisibleText(url) {
-  if (new URL(url).pathname === "/demo-article") {
-    return {
-      title: "The Value of Clear Technical Communication",
-      text: "Clear technical communication makes software easier to build, use, and maintain. It translates complex engineering decisions into language that teammates, users, and stakeholders can understand. Good documentation explains purpose before implementation details and gives readers setup instructions and examples. Teams benefit when decisions are recorded with their trade-offs because future contributors can avoid repeating old investigations. Writing clearly exposes ambiguous requirements early, improves reviews, and creates shared understanding. Useful communication is accurate, current, structured, and focused on the reader's next action.",
-    };
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname === "/demo-article" || parsed.pathname === "/demo-article/") {
+      return {
+        title: "The Value of Clear Technical Communication",
+        text: "Clear technical communication makes software easier to build, use, and maintain. It translates complex engineering decisions into language that teammates, users, and stakeholders can understand. Good documentation explains purpose before implementation details and gives readers setup instructions and examples. Teams benefit when decisions are recorded with their trade-offs because future contributors can avoid repeating old investigations. Writing clearly exposes ambiguous requirements early, improves reviews, and creates shared understanding. Useful communication is accurate, current, structured, and focused on the reader's next action.",
+      };
+    }
+  } catch {
+    // Proceed to standard fetch
   }
+
 
   let html;
   const requestConfig = {
