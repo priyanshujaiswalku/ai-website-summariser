@@ -40,6 +40,12 @@ router.post("/summarize", async (req, res) => {
     if (err.code === "ECONNABORTED") {
       return res.status(504).json({ error: "Fetching the page timed out." });
     }
+    if (err.code === "EACCES" || err.code === "EPERM") {
+      return res.status(502).json({
+        error:
+          "This environment is blocking outbound website access. Try again from a network that permits HTTPS connections.",
+      });
+    }
     if (err.response?.status === 404 || err.code === "ENOTFOUND") {
       return res.status(400).json({ error: "That URL could not be reached." });
     }
